@@ -1,4 +1,4 @@
-pub use self::{vector::*, particle::*};
+pub use self::{particle::*, vector::*};
 
+mod particle;
 mod vector;
-mod particle
