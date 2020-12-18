@@ -1,6 +1,5 @@
+use crate::Real;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
-
-pub type Real = f32;
 
 #[derive(Default, Copy, Clone, PartialEq)]
 pub struct Vector3 {
