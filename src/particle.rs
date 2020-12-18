@@ -1,5 +1,6 @@
 use crate::{Real, Vector3};
 
+#[derive(Default)]
 pub struct Particle {
     pub position: Vector3,
     pub velocity: Vector3,
