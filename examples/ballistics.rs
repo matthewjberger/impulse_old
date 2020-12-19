@@ -1,10 +1,10 @@
 use impulse::{Particle, Real};
-use kiss3d::{camera::FirstPerson, light::Light, text::Font, window::Window};
+use kiss3d::{camera::ArcBall, light::Light, text::Font, window::Window};
 use na::{Point2, Point3, Translation3, UnitQuaternion, Vector3};
 use nalgebra as na;
 
 fn main() {
-    let mut first_person = FirstPerson::new(Point3::new(10.0f32, 0.0, 10.0), Point3::origin());
+    let mut camera = ArcBall::new(Point3::new(10.0f32, 0.0, 10.0), Point3::origin());
 
     let mut window = Window::new("Ballistics");
     window.set_light(Light::StickToCamera);
@@ -40,7 +40,7 @@ fn main() {
             &Point3::new(0.0, 1.0, 1.0),
         );
 
-        window.render_with_camera(&mut first_person);
+        window.render_with_camera(&mut camera);
 
         particle.integrate(step);
         sphere.set_local_translation(Translation3::new(
