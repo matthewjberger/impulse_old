@@ -5,3 +5,7 @@ authors = ["Matthew J. Berger <matthewberger@nevada.unr.edu>"]
 edition = "2018"
 
 [dependencies]
+
+[dev-dependencies]
+kiss3d = "0.28.0"
+nalgebra = "0.23.2"
