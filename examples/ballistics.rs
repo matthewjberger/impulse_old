@@ -1,4 +1,4 @@
-use impulse::{Particle, Real};
+use impulse::{Body, Real};
 use kiss3d::{
     event::{Action, Key, WindowEvent},
     light::Light,
@@ -26,7 +26,7 @@ impl Default for Shot {
 
 #[derive(Default, Copy, Clone)]
 struct Round {
-    pub particle: Particle,
+    pub body: Body,
     pub kind: Shot,
     pub start_time: Option<Instant>,
 }
@@ -49,37 +49,37 @@ impl Gun {
         {
             match self.next_shot_kind {
                 Shot::Pistol => {
-                    available_round.particle.inverse_mass = 2_f32.recip(); // 2.0 kg
-                    available_round.particle.velocity = impulse::Vector3::new(0.0, 0.0, 35.0); // 35 m/s
-                    available_round.particle.acceleration = impulse::Vector3::new(0.0, -1.0, 0.0);
-                    available_round.particle.damping = 0.99;
+                    available_round.body.inverse_mass = 2_f32.recip(); // 2.0 kg
+                    available_round.body.velocity = impulse::Vector3::new(0.0, 0.0, 35.0); // 35 m/s
+                    available_round.body.acceleration = impulse::Vector3::new(0.0, -1.0, 0.0);
+                    available_round.body.damping = 0.99;
                 }
                 Shot::Artillery => {
-                    available_round.particle.inverse_mass = 200_f32.recip(); // 200.0 kg
-                    available_round.particle.velocity = impulse::Vector3::new(0.0, 30.0, 40.0); // 50 m/s
-                    available_round.particle.acceleration = impulse::Vector3::new(0.0, -20.0, 0.0);
-                    available_round.particle.damping = 0.99;
+                    available_round.body.inverse_mass = 200_f32.recip(); // 200.0 kg
+                    available_round.body.velocity = impulse::Vector3::new(0.0, 30.0, 40.0); // 50 m/s
+                    available_round.body.acceleration = impulse::Vector3::new(0.0, -20.0, 0.0);
+                    available_round.body.damping = 0.99;
                 }
                 Shot::Fireball => {
-                    available_round.particle.inverse_mass = 1_f32.recip(); // 1.0 kg - mostly blast damage
-                    available_round.particle.velocity = impulse::Vector3::new(0.0, 0.0, 10.0); // 5 m/s
-                    available_round.particle.acceleration = impulse::Vector3::new(0.0, 0.6, 0.0); // Floats up
-                    available_round.particle.damping = 0.9;
+                    available_round.body.inverse_mass = 1_f32.recip(); // 1.0 kg - mostly blast damage
+                    available_round.body.velocity = impulse::Vector3::new(0.0, 0.0, 10.0); // 5 m/s
+                    available_round.body.acceleration = impulse::Vector3::new(0.0, 0.6, 0.0); // Floats up
+                    available_round.body.damping = 0.9;
                 }
                 Shot::Laser => {
                     // Note that this is the kind of laser bolt seen in films,
                     // not a realistic laser beam!
-                    available_round.particle.inverse_mass = 0.1_f32.recip(); // 1.0 kg - mostly blast damage
-                    available_round.particle.velocity = impulse::Vector3::new(0.0, 0.0, 100.0); // 100 m/s
-                    available_round.particle.acceleration = impulse::Vector3::new(0.0, 0.0, 0.0); // No gravity
-                    available_round.particle.damping = 0.99;
+                    available_round.body.inverse_mass = 0.1_f32.recip(); // 1.0 kg - mostly blast damage
+                    available_round.body.velocity = impulse::Vector3::new(0.0, 0.0, 100.0); // 100 m/s
+                    available_round.body.acceleration = impulse::Vector3::new(0.0, 0.0, 0.0); // No gravity
+                    available_round.body.damping = 0.99;
                 }
                 Shot::Unused => {}
             }
-            available_round.particle.position = impulse::Vector3::new(0.0, 1.5, 0.0);
+            available_round.body.position = impulse::Vector3::new(0.0, 1.5, 0.0);
             available_round.start_time = Some(Instant::now());
             available_round.kind = self.next_shot_kind;
-            available_round.particle.force_accumulator = impulse::Vector3::zero();
+            available_round.body.force_accumulator = impulse::Vector3::zero();
         }
     }
 
@@ -89,10 +89,9 @@ impl Gun {
                 continue;
             }
 
-            round.particle.integrate(last_frame_duration);
+            round.body.integrate(last_frame_duration);
 
-            let out_of_bounds =
-                round.particle.position.y < 0.0 || round.particle.position.z > 200.0;
+            let out_of_bounds = round.body.position.y < 0.0 || round.body.position.z > 200.0;
             let expired = match round.start_time {
                 Some(instant) => {
                     (Instant::now() - instant).as_secs() > Self::PARTICLE_TIMEOUT_SECS as _
@@ -164,9 +163,9 @@ fn main() {
             }
 
             bullet.set_local_translation(Translation3::new(
-                round.particle.position.x,
-                round.particle.position.y,
-                round.particle.position.z,
+                round.body.position.x,
+                round.body.position.y,
+                round.body.position.z,
             ));
         }
     }

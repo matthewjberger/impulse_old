@@ -79,6 +79,14 @@ impl AddAssign for Vector3 {
     }
 }
 
+impl AddAssign<&Vector3> for Vector3 {
+    fn add_assign(&mut self, rhs: &Self) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+        self.z += rhs.z;
+    }
+}
+
 impl Sub for Vector3 {
     type Output = Self;
 
@@ -89,6 +97,14 @@ impl Sub for Vector3 {
 
 impl SubAssign for Vector3 {
     fn sub_assign(&mut self, rhs: Self) {
+        self.x -= rhs.x;
+        self.y -= rhs.y;
+        self.z -= rhs.z;
+    }
+}
+
+impl SubAssign<&Vector3> for Vector3 {
+    fn sub_assign(&mut self, rhs: &Self) {
         self.x -= rhs.x;
         self.y -= rhs.y;
         self.z -= rhs.z;

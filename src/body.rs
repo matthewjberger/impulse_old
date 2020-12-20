@@ -1,7 +1,7 @@
 use crate::{Real, Vector3};
 
 #[derive(Debug, Default, Copy, Clone)]
-pub struct Particle {
+pub struct Body {
     pub position: Vector3,
     pub velocity: Vector3,
     pub acceleration: Vector3,
@@ -18,7 +18,7 @@ pub struct Particle {
     /// optimal. A value of 0.999 might be perfect, for example.
     pub damping: Real,
 
-    /// Holds the inverse of the mass of the particle.
+    /// Holds the inverse of the mass of the body.
     ///
     /// It is more useful to hold the inverse mass because
     /// integration is simpler, and because in real-time
@@ -26,11 +26,27 @@ pub struct Particle {
     /// infinite mass (immovable) than zero mass
     /// (completely unstable in numerical simulation).
     pub inverse_mass: Real,
+
+    // Holds the accumulated force to be applied at the next
+    // simulation iteration only. This value is zeroed at each
+    // integration step.
     pub force_accumulator: Vector3,
 }
 
-impl Particle {
-    /// Integrates the particle forward in time by the given amount.
+impl Body {
+    pub fn mass(&self) -> Real {
+        self.inverse_mass.recip()
+    }
+
+    pub fn has_finite_mass(&self) -> bool {
+        self.inverse_mass == 0.0
+    }
+
+    pub fn add_force(&mut self, force: &Vector3) {
+        self.force_accumulator += force;
+    }
+
+    /// Integrates the body forward in time by the given amount.
     /// This function uses a Newton-Euler integration method, which is a
     /// linear approximation to the correct integral. For this reason it
     /// may be inaccurate in some cases.
