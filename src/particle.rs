@@ -1,6 +1,6 @@
 use crate::{Real, Vector3};
 
-#[derive(Default)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct Particle {
     pub position: Vector3,
     pub velocity: Vector3,
@@ -26,6 +26,7 @@ pub struct Particle {
     /// infinite mass (immovable) than zero mass
     /// (completely unstable in numerical simulation).
     pub inverse_mass: Real,
+    pub force_accumulator: Vector3,
 }
 
 impl Particle {
@@ -45,7 +46,8 @@ impl Particle {
         self.position += self.velocity * duration;
 
         // Work out the acceleration from the force
-        let acceleration = self.acceleration; // TODO: After force generation this will be added to
+        let mut acceleration = self.acceleration;
+        acceleration += self.force_accumulator * self.inverse_mass;
 
         let drag = duration.powf(self.damping);
 
@@ -53,5 +55,6 @@ impl Particle {
         self.velocity += acceleration * duration * drag;
 
         // Clear any accumulated forces
+        self.force_accumulator = Vector3::zero();
     }
 }

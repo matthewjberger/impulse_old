@@ -1,7 +1,7 @@
 use crate::Real;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
-#[derive(Default, Copy, Clone, PartialEq)]
+#[derive(Debug, Default, Copy, Clone, PartialEq)]
 pub struct Vector3 {
     pub x: Real,
     pub y: Real,
