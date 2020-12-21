@@ -1,7 +1,7 @@
-use crate::{Body, Handle, Real, Vector3};
+use crate::{Arena, Body, Handle, Real, Vector3};
 
 pub trait ForceGenerator {
-    fn apply(&self, duration: Real, body: &mut Body);
+    fn apply(&self, duration: Real, body_handle: Handle, bodies: &mut Arena<Body>);
 }
 
 pub struct ForceRegistration {
@@ -15,7 +15,12 @@ struct Gravity {
 }
 
 impl ForceGenerator for Gravity {
-    fn apply(&self, _duration: Real, body: &mut Body) {
+    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut Arena<Body>) {
+        let body = match bodies.get_mut(body_handle) {
+            Some(body) => body,
+            None => return,
+        };
+
         if !body.has_finite_mass() {
             return;
         }
@@ -31,7 +36,12 @@ struct Drag {
 }
 
 impl ForceGenerator for Drag {
-    fn apply(&self, _duration: Real, body: &mut Body) {
+    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut Arena<Body>) {
+        let body = match bodies.get_mut(body_handle) {
+            Some(body) => body,
+            None => return,
+        };
+
         let mut drag_coefficient = body.velocity.magnitude();
         drag_coefficient = self.k1 * drag_coefficient + self.k2 * drag_coefficient.powi(2);
         let force = body.velocity.normalize() * -drag_coefficient;
@@ -40,14 +50,27 @@ impl ForceGenerator for Drag {
 }
 
 struct Spring {
-    pub end: Body, // FIXME: Replace this with a handle
+    pub end_body_handle: Handle, // FIXME: Replace this with a handle
     pub spring_constant: Real,
     pub rest_length: Real,
 }
 
 impl ForceGenerator for Spring {
-    fn apply(&self, _duration: Real, body: &mut Body) {
-        let force = body.position - self.end.position;
+    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut Arena<Body>) {
+        let end_body_position = {
+            let end_body = match bodies.get(self.end_body_handle) {
+                Some(end_body) => end_body,
+                None => return,
+            };
+            end_body.position
+        };
+
+        let body = match bodies.get_mut(body_handle) {
+            Some(body) => body,
+            None => return,
+        };
+
+        let force = body.position - end_body_position;
         let magnitude = (force.magnitude() - self.rest_length).abs() * self.spring_constant;
         let force = force.normalize() * -magnitude;
         body.add_force(&force);
@@ -61,7 +84,11 @@ struct AnchoredSpring {
 }
 
 impl ForceGenerator for AnchoredSpring {
-    fn apply(&self, _duration: Real, body: &mut Body) {
+    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut Arena<Body>) {
+        let body = match bodies.get_mut(body_handle) {
+            Some(body) => body,
+            None => return,
+        };
         let force = body.position - self.anchor;
         let magnitude = (force.magnitude() - self.rest_length).abs() * self.spring_constant;
         let force = force.normalize() * -magnitude;
@@ -70,14 +97,27 @@ impl ForceGenerator for AnchoredSpring {
 }
 
 struct Bungee {
-    pub end: Body, // FIXME: Replace this with a handle
+    pub end_body_handle: Handle,
     pub spring_constant: Real,
     pub rest_length: Real,
 }
 
 impl ForceGenerator for Bungee {
-    fn apply(&self, _duration: Real, body: &mut Body) {
-        let force = body.position - self.end.position;
+    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut Arena<Body>) {
+        let end_body_position = {
+            let end_body = match bodies.get(self.end_body_handle) {
+                Some(end_body) => end_body,
+                None => return,
+            };
+            end_body.position
+        };
+
+        let body = match bodies.get_mut(body_handle) {
+            Some(body) => body,
+            None => return,
+        };
+
+        let force = body.position - end_body_position;
         let magnitude = force.magnitude();
         if magnitude <= self.rest_length {
             return;
@@ -95,7 +135,12 @@ struct AnchoredBungee {
 }
 
 impl ForceGenerator for AnchoredBungee {
-    fn apply(&self, _duration: Real, body: &mut Body) {
+    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut Arena<Body>) {
+        let body = match bodies.get_mut(body_handle) {
+            Some(body) => body,
+            None => return,
+        };
+
         let force = body.position - self.anchor;
         let magnitude = force.magnitude();
         if magnitude <= self.rest_length {
@@ -115,7 +160,12 @@ pub struct Buoyancy {
 }
 
 impl ForceGenerator for Buoyancy {
-    fn apply(&self, _duration: Real, body: &mut Body) {
+    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut Arena<Body>) {
+        let body = match bodies.get_mut(body_handle) {
+            Some(body) => body,
+            None => return,
+        };
+
         let depth = body.position.y;
         let out_of_water = depth >= self.water_height + self.max_depth;
         if out_of_water {

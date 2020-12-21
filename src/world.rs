@@ -15,13 +15,8 @@ impl PhysicsWorld {
                 None => continue,
             };
 
-            for body in registration.bodies.iter() {
-                match self.bodies.get_mut(*body) {
-                    Some(body) => {
-                        (*force_generator).apply(duration, body);
-                    }
-                    None => continue,
-                }
+            for body_handle in registration.bodies.iter() {
+                (*force_generator).apply(duration, *body_handle, &mut self.bodies);
             }
         }
 
