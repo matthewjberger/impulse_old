@@ -6,8 +6,8 @@ use crate::{Arena, Body, BodySet, Handle, Real, Vector3};
 pub struct Contact {
     pub body_handle: Handle,
 
-    /// A value of None implies a contact with scenery
-    pub other_body_handle: Option<Handle>,
+    /// A body with infinite mass and a velocity of zero implies a contact with scenery
+    pub other_body_handle: Handle,
 
     /// The normal restitution coefficient at the contact
     pub restitution: Real,
@@ -29,28 +29,31 @@ impl Contact {
         // Find velocity in the direction of the of the contact
         let separating_velocity = self.separating_velocity(bodies);
 
-        if separating_velocity > 0.0 {
+        let impulse_required = separating_velocity > 0.0;
+        if !impulse_required {
             // The contact is either separating or stationary
             // so there is no impulse required
             return;
         }
 
-        let mut new_separating_velocity = -separating_velocity * self.restitution;
-
-        let body = bodies
-            .get(self.body_handle)
-            .expect("Failed to lookup body!");
-
-        // Check the velocity build-up due to acceleration only
-        let acceleration_caused_velocity = body.acceleration;
-
-        let other_body = match self.other_body_handle {
-            Some(handle) => bodies.get(handle),
-            None => None,
+        let (body_acceleration, body_inverse_mass) = {
+            let body = bodies
+                .get(self.body_handle)
+                .expect("Failed to lookup body!");
+            (body.acceleration, body.inverse_mass)
         };
 
-        let acceleration_caused_separation_velocity =
-            acceleration_caused_velocity.dot(self.normal) * duration;
+        let other_body_inverse_mass = {
+            bodies
+                .get(self.other_body_handle)
+                .expect("Failed to lookup body!")
+                .inverse_mass
+        };
+
+        let mut new_separating_velocity = -separating_velocity * self.restitution;
+
+        // Check the velocity build-up due to acceleration only
+        let acceleration_caused_separation_velocity = body_acceleration.dot(self.normal) * duration;
 
         // If we've got a closing velocity due to acceleration build-up
         // remove it from the new separating velocity
@@ -66,11 +69,7 @@ impl Contact {
 
         // We apply the change in velocity to each object in proportion to their inverse mass
         // Those with lower inverse mass (higher actual mass) get less change in velocity
-        let mut total_inverse_mass = body.inverse_mass;
-        if let Some(other_body) = other_body {
-            total_inverse_mass += other_body.inverse_mass;
-        }
-
+        let total_inverse_mass = body_inverse_mass + other_body_inverse_mass;
         if total_inverse_mass <= 0.0 {
             return;
         }
@@ -80,11 +79,19 @@ impl Contact {
         // The amount of impulse per unit of inverse mass
         let impulse_per_inverse_mass = self.normal * impulse;
 
-        // FIXME: Set body velocities
-        // set body velocity here
-        let velocity = body.velocity + impulse_per_inverse_mass * body.inverse_mass;
-        // set other body velocity here
-        // let velocity = other_body.velocity + impulse_per_inverse_mass * body.inverse_mass;
+        {
+            let body = bodies
+                .get_mut(self.body_handle)
+                .expect("Failed to lookup body!");
+            body.velocity += impulse_per_inverse_mass * body.inverse_mass;
+        };
+
+        {
+            let body = bodies
+                .get_mut(self.other_body_handle)
+                .expect("Failed to lookup body!");
+            body.velocity += impulse_per_inverse_mass * -body.inverse_mass;
+        };
     }
 
     fn separating_velocity(&self, bodies: &mut BodySet) -> Real {
@@ -92,17 +99,11 @@ impl Contact {
             .get(self.body_handle)
             .expect("Failed to lookup body!");
 
-        let other_body = match self.other_body_handle {
-            Some(handle) => bodies.get(handle),
-            None => None,
-        };
+        let other_body = bodies
+            .get(self.other_body_handle)
+            .expect("Failed to lookup body!");
 
-        let mut relative_velocity = body.velocity;
-        if let Some(other_body) = other_body {
-            relative_velocity -= other_body.velocity;
-        }
-
-        relative_velocity.dot(self.normal)
+        (body.velocity - other_body.velocity).dot(self.normal)
     }
 
     fn resolve_interpenetration(&self, duration: Real, bodies: &mut BodySet) {
@@ -111,38 +112,38 @@ impl Contact {
             return;
         }
 
-        // The movement of each object is based on their inverse mass, so
-        // total that.
-        let body = bodies
-            .get(self.body_handle)
-            .expect("Failed to lookup body!");
-        let other_body = match self.other_body_handle {
-            Some(handle) => bodies.get(handle),
-            None => None,
-        };
-        let mut total_inverse_mass = body.inverse_mass;
-        if let Some(other_body) = other_body {
-            total_inverse_mass += other_body.inverse_mass;
-        }
-
-        // If all particles have infinite mass, then we do nothing
-        if total_inverse_mass <= 0.0 {
-            return;
-        }
-
         // Find the amount of penetration resolution per unit of inverse mass
-        let move_per_inverse_mass = self.normal * (self.penetration / total_inverse_mass);
+        let move_per_inverse_mass = {
+            // The movement of each object is based on their inverse mass, so
+            // total that.
+            let body = bodies
+                .get(self.body_handle)
+                .expect("Failed to lookup body!");
+            let other_body = bodies
+                .get(self.body_handle)
+                .expect("Failed to lookup body!");
 
-        // Calculate the the movement amounts
-        let mut body_0_movement = move_per_inverse_mass * body.inverse_mass;
-        let body_1_movement = match other_body {
-            Some(other_body) => move_per_inverse_mass * -other_body.inverse_mass,
-            None => Vector3::zero(),
+            // If all particles have infinite mass, then we do nothing
+            let total_inverse_mass = body.inverse_mass + other_body.inverse_mass;
+            if total_inverse_mass <= 0.0 {
+                return;
+            }
+            self.normal * (self.penetration / total_inverse_mass)
         };
 
-        // FIXME: Set body positions
         // Apply the penetration resolution
-        // Set body 0 position = body_0.position + body_0_movement;
-        // Set body 1 position = body_1.position + body_0_movement;
+        {
+            let body = bodies
+                .get_mut(self.body_handle)
+                .expect("Failed to lookup body!");
+            body.position = move_per_inverse_mass * body.inverse_mass;
+        };
+
+        {
+            let body = bodies
+                .get_mut(self.other_body_handle)
+                .expect("Failed to lookup body!");
+            body.position = move_per_inverse_mass * -body.inverse_mass;
+        };
     }
 }
