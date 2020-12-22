@@ -38,7 +38,7 @@ impl Vector3 {
     }
 
     pub fn magnitude_squared(&self) -> Real {
-        self.x.powi(2) * self.y.powi(2) * self.z.powi(2)
+        self.x.powi(2) + self.y.powi(2) + self.z.powi(2)
     }
 
     pub fn normalize(&self) -> Self {
@@ -175,10 +175,10 @@ impl MulAssign<Real> for Vector3 {
     }
 }
 
-// TODO: Write tests...
 // #[cfg(test)]
 // mod tests {
 //     use super::*;
 //     #[test]
-//     fn test_add() {}
+//     fn vec_test() {
+//     }
 // }

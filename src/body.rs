@@ -61,14 +61,12 @@ impl Body {
         // Update linear position
         self.position += self.velocity * duration;
 
-        // Work out the acceleration from the force
-        let mut acceleration = self.acceleration;
-        acceleration += self.force_accumulator * self.inverse_mass;
-
-        let drag = duration.powf(self.damping);
-
         // Update linear velocity from the acceleration
-        self.velocity += acceleration * duration * drag;
+        self.velocity +=
+            self.acceleration + (self.force_accumulator * self.inverse_mass) * duration;
+
+        // Impose drag
+        self.velocity *= (self.damping.powf(duration) * 100.0).floor() / 100.0;
 
         // Clear any accumulated forces
         self.force_accumulator = Vector3::zero();

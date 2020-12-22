@@ -114,7 +114,7 @@ impl ForceGenerator for AnchoredSpring {
             None => return,
         };
         let force = body.position - self.anchor;
-        let magnitude = (force.magnitude() - self.rest_length).abs() * self.spring_constant;
+        let magnitude = (self.rest_length - force.magnitude()) * self.spring_constant;
         let force = force.normalize() * -magnitude;
         body.add_force(&force);
     }
@@ -143,7 +143,7 @@ impl ForceGenerator for Bungee {
 
         let force = body.position - end_body_position;
         let magnitude = force.magnitude();
-        if magnitude <= self.rest_length {
+        if magnitude < self.rest_length {
             return;
         }
         let magnitude = (self.rest_length - magnitude) * self.spring_constant;
@@ -167,10 +167,10 @@ impl ForceGenerator for AnchoredBungee {
 
         let force = body.position - self.anchor;
         let magnitude = force.magnitude();
-        if magnitude <= self.rest_length {
+        if magnitude < self.rest_length {
             return;
         }
-        let magnitude = (self.rest_length - magnitude) * self.spring_constant;
+        let magnitude = (magnitude - self.rest_length) * self.spring_constant;
         let force = force.normalize() * -magnitude;
         body.add_force(&force);
     }
