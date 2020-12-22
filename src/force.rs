@@ -9,9 +9,33 @@ pub struct ForceRegistration {
     pub bodies: Vec<Handle>,
 }
 
-#[derive(Default)]
-struct Gravity {
+impl ForceRegistration {
+    pub fn new(generator_handle: Handle, bodies: Vec<Handle>) -> Self {
+        Self {
+            generator_handle,
+            bodies,
+        }
+    }
+}
+
+pub struct Gravity {
     pub force: Vector3,
+}
+
+impl Gravity {
+    pub fn new(force: Vector3) -> Self {
+        Self { force }
+    }
+
+    pub fn earth_gravity() -> Vector3 {
+        Vector3::y() * -9.8
+    }
+}
+
+impl Default for Gravity {
+    fn default() -> Self {
+        Self::new(Self::earth_gravity())
+    }
 }
 
 impl ForceGenerator for Gravity {
@@ -21,7 +45,7 @@ impl ForceGenerator for Gravity {
             None => return,
         };
 
-        if !body.has_finite_mass() {
+        if body.has_infinite_mass() {
             return;
         }
         let force = self.force * body.mass();
@@ -30,7 +54,7 @@ impl ForceGenerator for Gravity {
 }
 
 #[derive(Default)]
-struct Drag {
+pub struct Drag {
     pub k1: Real,
     pub k2: Real,
 }
@@ -49,7 +73,7 @@ impl ForceGenerator for Drag {
     }
 }
 
-struct Spring {
+pub struct Spring {
     pub end_body_handle: Handle, // FIXME: Replace this with a handle
     pub spring_constant: Real,
     pub rest_length: Real,
@@ -77,7 +101,7 @@ impl ForceGenerator for Spring {
     }
 }
 
-struct AnchoredSpring {
+pub struct AnchoredSpring {
     pub anchor: Vector3,
     pub spring_constant: Real,
     pub rest_length: Real,
@@ -96,7 +120,7 @@ impl ForceGenerator for AnchoredSpring {
     }
 }
 
-struct Bungee {
+pub struct Bungee {
     pub end_body_handle: Handle,
     pub spring_constant: Real,
     pub rest_length: Real,
@@ -128,7 +152,7 @@ impl ForceGenerator for Bungee {
     }
 }
 
-struct AnchoredBungee {
+pub struct AnchoredBungee {
     pub anchor: Vector3,
     pub spring_constant: Real,
     pub rest_length: Real,

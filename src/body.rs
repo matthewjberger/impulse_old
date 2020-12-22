@@ -38,7 +38,7 @@ impl Body {
         self.inverse_mass.recip()
     }
 
-    pub fn has_finite_mass(&self) -> bool {
+    pub fn has_infinite_mass(&self) -> bool {
         self.inverse_mass == 0.0
     }
 
