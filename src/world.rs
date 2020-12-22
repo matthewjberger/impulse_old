@@ -1,9 +1,9 @@
-use crate::{Arena, Body, ForceGenerator, ForceRegistration, Real};
+use crate::{BodySet, ForceGeneratorSet, ForceRegistration, Real};
 
 #[derive(Default)]
 pub struct PhysicsWorld {
-    pub bodies: Arena<Body>,
-    pub force_generators: Arena<Box<dyn ForceGenerator>>,
+    pub bodies: BodySet,
+    pub force_generators: ForceGeneratorSet,
     pub registrations: Vec<ForceRegistration>,
 }
 

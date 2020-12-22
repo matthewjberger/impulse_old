@@ -1,7 +1,7 @@
-use crate::{Arena, Body, Handle, Real, Vector3};
+use crate::{BodySet, Handle, Real, Vector3};
 
 pub trait ForceGenerator {
-    fn apply(&self, duration: Real, body_handle: Handle, bodies: &mut Arena<Body>);
+    fn apply(&self, duration: Real, body_handle: Handle, bodies: &mut BodySet);
 }
 
 pub struct ForceRegistration {
@@ -39,7 +39,7 @@ impl Default for Gravity {
 }
 
 impl ForceGenerator for Gravity {
-    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut Arena<Body>) {
+    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut BodySet) {
         let body = match bodies.get_mut(body_handle) {
             Some(body) => body,
             None => return,
@@ -60,7 +60,7 @@ pub struct Drag {
 }
 
 impl ForceGenerator for Drag {
-    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut Arena<Body>) {
+    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut BodySet) {
         let body = match bodies.get_mut(body_handle) {
             Some(body) => body,
             None => return,
@@ -80,7 +80,7 @@ pub struct Spring {
 }
 
 impl ForceGenerator for Spring {
-    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut Arena<Body>) {
+    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut BodySet) {
         let end_body_position = {
             let end_body = match bodies.get(self.end_body_handle) {
                 Some(end_body) => end_body,
@@ -108,7 +108,7 @@ pub struct AnchoredSpring {
 }
 
 impl ForceGenerator for AnchoredSpring {
-    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut Arena<Body>) {
+    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut BodySet) {
         let body = match bodies.get_mut(body_handle) {
             Some(body) => body,
             None => return,
@@ -127,7 +127,7 @@ pub struct Bungee {
 }
 
 impl ForceGenerator for Bungee {
-    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut Arena<Body>) {
+    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut BodySet) {
         let end_body_position = {
             let end_body = match bodies.get(self.end_body_handle) {
                 Some(end_body) => end_body,
@@ -159,7 +159,7 @@ pub struct AnchoredBungee {
 }
 
 impl ForceGenerator for AnchoredBungee {
-    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut Arena<Body>) {
+    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut BodySet) {
         let body = match bodies.get_mut(body_handle) {
             Some(body) => body,
             None => return,
@@ -184,7 +184,7 @@ pub struct Buoyancy {
 }
 
 impl ForceGenerator for Buoyancy {
-    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut Arena<Body>) {
+    fn apply(&self, _duration: Real, body_handle: Handle, bodies: &mut BodySet) {
         let body = match bodies.get_mut(body_handle) {
             Some(body) => body,
             None => return,
