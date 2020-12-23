@@ -1,5 +1,9 @@
 use crate::{Arena, Body, BodySet, Handle, Real, Vector3};
 
+pub trait ContactGenerator {
+    fn add_contact(contact: &Contact, limit: u32);
+}
+
 /// The contact resolution routine for contacts. One
 /// resolver instance can be shared for the whole simulation.
 #[derive(Default)]

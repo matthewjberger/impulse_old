@@ -1,8 +1,9 @@
-pub use self::{body::*, force::*, vector::*, world::*};
+pub use self::{body::*, contact::*, force::*, link::*, vector::*, world::*};
 
 mod body;
 mod contact;
 mod force;
+mod link;
 mod vector;
 mod world;
 
