@@ -1,5 +1,48 @@
 use crate::{Arena, Body, BodySet, Handle, Real, Vector3};
 
+/// The contact resolution routine for contacts. One
+/// resolver instance can be shared for the whole simulation.
+#[derive(Default)]
+pub struct ContactResolver {
+    pub iterations: u32,
+    pub iterations_used: u32,
+}
+
+impl ContactResolver {
+    /// Resolves a set of particle contacts for both penetration
+    /// and velocity.
+    ///
+    /// Contacts that cannot interact with each other should be
+    /// passed to separate calls to resolveContacts, as the
+    /// resolution algorithm takes much longer for lots of contacts
+    /// than it does for the same number of contacts in small sets.
+    pub fn resolve_contacts(&mut self, contacts: &[Contact], duration: Real, bodies: &mut BodySet) {
+        let number_of_contacts = contacts.len();
+        while self.iterations_used < self.iterations {
+            // Find the contact with the largest closing velocity
+            let (max_index, max_separating_velocity) = contacts
+                .iter()
+                .map(|contact| contact.separating_velocity(bodies))
+                .enumerate()
+                .fold((0, 0.0), |max, (index, velocity)| {
+                    if velocity > max.1 {
+                        (index, velocity)
+                    } else {
+                        max
+                    }
+                });
+
+            if max_index == number_of_contacts {
+                break;
+            }
+
+            contacts[max_index].resolve(bodies, duration);
+
+            self.iterations_used += 1;
+        }
+    }
+}
+
 /// A contact represents two objects in contact
 /// Resolving a contact removes their interpenetration, and applies sufficient
 /// impulse to keep them apart. Colliding bodies may also rebound.
@@ -20,12 +63,12 @@ pub struct Contact {
 }
 
 impl Contact {
-    fn resolve(&self, duration: Real, bodies: &mut BodySet) {
-        self.resolve_velocity(duration, bodies);
-        self.resolve_interpenetration(duration, bodies);
+    pub fn resolve(&self, bodies: &mut BodySet, duration: Real) {
+        self.resolve_velocity(bodies, duration);
+        self.resolve_interpenetration(bodies, duration);
     }
 
-    fn resolve_velocity(&self, duration: Real, bodies: &mut BodySet) {
+    fn resolve_velocity(&self, bodies: &mut BodySet, duration: Real) {
         // Find velocity in the direction of the of the contact
         let separating_velocity = self.separating_velocity(bodies);
 
@@ -94,7 +137,7 @@ impl Contact {
         };
     }
 
-    fn separating_velocity(&self, bodies: &mut BodySet) -> Real {
+    pub fn separating_velocity(&self, bodies: &mut BodySet) -> Real {
         let body = bodies
             .get(self.body_handle)
             .expect("Failed to lookup body!");
@@ -106,7 +149,7 @@ impl Contact {
         (body.velocity - other_body.velocity).dot(self.normal)
     }
 
-    fn resolve_interpenetration(&self, duration: Real, bodies: &mut BodySet) {
+    fn resolve_interpenetration(&self, bodies: &mut BodySet, duration: Real) {
         // If we don't have any penetration, skip this step.
         if self.penetration <= 0.0 {
             return;
@@ -136,14 +179,14 @@ impl Contact {
             let body = bodies
                 .get_mut(self.body_handle)
                 .expect("Failed to lookup body!");
-            body.position = move_per_inverse_mass * body.inverse_mass;
+            body.position += move_per_inverse_mass * body.inverse_mass;
         };
 
         {
             let body = bodies
                 .get_mut(self.other_body_handle)
                 .expect("Failed to lookup body!");
-            body.position = move_per_inverse_mass * -body.inverse_mass;
+            body.position += move_per_inverse_mass * -body.inverse_mass;
         };
     }
 }
