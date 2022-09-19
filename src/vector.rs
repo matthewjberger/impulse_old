@@ -56,9 +56,9 @@ impl Vector3 {
 
     pub fn cross(&self, rhs: Self) -> Self {
         Self::new(
-            self.y * rhs.z - self.z * self.y,
-            self.z * rhs.x - self.x * self.z,
-            self.x * rhs.y - self.y * self.x,
+            self.y * rhs.z - self.z * rhs.y,
+            self.z * rhs.x - self.x * rhs.z,
+            self.x * rhs.y - self.y * rhs.x,
         )
     }
 }
